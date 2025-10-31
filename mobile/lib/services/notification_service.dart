@@ -17,32 +17,38 @@ class NotificationService {
    * Initialize the notification service
    */
   static Future<void> init() async {
-    // ✅ Initialize timezone data
-    tzdata.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
-    print('[NOTIFICATION INIT] ✅ Timezone set to: ${tz.local.name}');
+    try {
+      // ✅ Initialize timezone data
+      tzdata.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      print('[NOTIFICATION INIT] ✅ Timezone set to: ${tz.local.name}');
 
-    // Android initialization
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      // Android initialization
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS initialization
-    const iosInit = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+      // iOS initialization
+      const iosInit = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    const initSettings = InitializationSettings(
-      android: androidInit,
-      iOS: iosInit,
-    );
+      const initSettings = InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      );
 
-    await _notificationsPlugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('[NOTIFICATION] 🔔 Tapped notification ID: ${response.id}');
-      },
-    );
+      await _notificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          print('[NOTIFICATION] 🔔 Tapped notification ID: ${response.id}');
+        },
+      );
+      print('[NOTIFICATION INIT] ✅ Initialization complete');
+    } catch (e) {
+      print('[NOTIFICATION INIT] ⚠️ Error during initialization: $e');
+      // Don't throw - app should still work without notifications
+    }
   }
 
   /**
@@ -104,13 +110,23 @@ class NotificationService {
   }
 
   static Future<void> cancelNotification(int id) async {
-    await _notificationsPlugin.cancel(id);
-    print('[NOTIFICATION] ❎ Cancelled notification $id');
+    try {
+      await _notificationsPlugin.cancel(id);
+      print('[NOTIFICATION] ❎ Cancelled notification $id');
+    } catch (e) {
+      print('[NOTIFICATION] ⚠️ Error cancelling notification $id: $e');
+      // Don't throw - just log the error
+    }
   }
 
   static Future<void> cancelAll() async {
-    await _notificationsPlugin.cancelAll();
-    print('[NOTIFICATION] 🧹 Cancelled all notifications');
+    try {
+      await _notificationsPlugin.cancelAll();
+      print('[NOTIFICATION] 🧹 Cancelled all notifications');
+    } catch (e) {
+      print('[NOTIFICATION] ⚠️ Error cancelling all notifications: $e');
+      // Don't throw - just log the error
+    }
   }
 
   static Future<void> scheduleTaskNotifications({
@@ -162,14 +178,19 @@ class NotificationService {
   }
 
   static Future<void> cancelTaskNotifications(String taskId) async {
-    final baseId = taskId.hashCode;
-    final reminders = [60, 30, 15, 10, 5, 2];
+    try {
+      final baseId = taskId.hashCode;
+      final reminders = [60, 30, 15, 10, 5, 2];
 
-    for (final mins in reminders) {
-      await cancelNotification(baseId + mins);
+      for (final mins in reminders) {
+        await cancelNotification(baseId + mins);
+      }
+
+      await cancelNotification(baseId + 9999);
+      print('[NOTIFICATION] 🧹 Cleared notifications for $taskId');
+    } catch (e) {
+      print('[NOTIFICATION] ⚠️ Error cancelling task notifications: $e');
+      // Don't throw - just log the error
     }
-
-    await cancelNotification(baseId + 9999);
-    print('[NOTIFICATION] 🧹 Cleared notifications for $taskId');
   }
 }

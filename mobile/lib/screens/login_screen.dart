@@ -39,7 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text,
     );
     
-    if (!success && mounted) {
+    if (success && mounted) {
+      // Navigate to dashboard on successful login
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.error ?? 'Login failed'),
